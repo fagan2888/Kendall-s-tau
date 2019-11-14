@@ -37,14 +37,21 @@ def kendall (listOne, listTwo):
     
     pairOne = set(comp(setOne))
     pairTwo = set(comp(setTwo))
-    reversions = len(pairOne.difference(pairTwo))
+    reversions = 2 * len(pairOne.difference(pairTwo))
     kendall = 1 - 2 * reversions / (length*(length-1))
 
+    print(kendall)
+
 #   the second way: we can use combinations in itertools module to help but in this way you have to make sure that combinations does not change sequence of origin list
-    reversions = len(set(combinations(setOne, 2)).difference(set(combinations(setTwo, 2))))
+    reversions = 2 * len(set(combinations(setOne, 2)).difference(set(combinations(setTwo, 2))))
     kendall = 1 - 2 * reversions / (length*(length-1))
  
+    print(kendall)
+
 #   the third way: use kendalltau in scipy.stats
     kendall = kendalltau(setOne, setTwo)
+    print(kendall)
     
     return kendall
+
+kendall(listOne, listTwo)
