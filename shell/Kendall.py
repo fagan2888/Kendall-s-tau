@@ -174,7 +174,8 @@ def extend(delta, maxDelay, dCore):
             tauc = df['tau']
             dist = np.linalg.norm(np.array(tau)-np.array(tauc)) 
             distList.append(dist)
-        
+        if len(distList) == 0:
+            return -1
         distMin = np.min(distList)
         if distMin < delta:
             dExtend.append(d)
@@ -192,6 +193,7 @@ def do(x, dmax, N, e, c, delta):
     print('core map done')
     
     dfCenter = pd.DataFrame(columns = ['d','T'])
+    dCore = dfCore.d
     for dc in dCore:
         dCenter = center(c, df, dmax, dc, N)
         dCenterList = list()
@@ -217,6 +219,9 @@ def do(x, dmax, N, e, c, delta):
 
     dfExtend = pd.DataFrame(columns = ['d', 'T'])
     dExtend = extend(delta, dmax, dCore)
+    if dExtend == -1:
+        print('no regular periods! please lower the criteria!')
+        return -1
     for de in dExtend:
         df = kendallList(x, de)
         num = len(df)//(2*de)
@@ -261,7 +266,7 @@ if __name__ == '__main__':
     # number of the periods we care about
     N = 100
     # max delay period
-    dmax = 100
+    dmax = 2200
     # error for selecting core map
     e = 0.02
     # error for selecting center map

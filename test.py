@@ -19,12 +19,10 @@ print(df)
 set_trace()
 print(df.index[0])
 set_trace()
-for i in range(3):
+for i in df.b:
     a.append(i)
     ad = i*i
-    c.append(ad)
-    b.append(df.index.names[i])
+    b.append(ad)
 
 print(a)
 print(b)
-print(c)
