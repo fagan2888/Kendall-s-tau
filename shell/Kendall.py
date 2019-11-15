@@ -6,6 +6,7 @@ import pandas as pd
 import math
 from itertools import combinations
 from scipy.stats import kendalltau
+from loadData import *
 from ipdb import set_trace
 
 
@@ -232,6 +233,24 @@ def do(x, dmax, N, e, c, delta):
 
 
 if __name__ == '__main__':
+
+    # load basic data
+    df = loadStockIndex()
+    sh000001 = df[df['S_INFO_WINDCODE'] == '000001.SH']
+    sh000001['TRADE_DT'] = sh000001['TRADE_DT'].apply(lambda x: pd.Timestamp(x).strftime('%Y-%m-%d'))
+    sh000001.sort_values('TRADE_DT', ascending = True, inplace = True)
+    sh000001.reset_index(inplace = True, drop = True)
+
+    sz399001 = df[df['S_INFO_WINDCODE'] == '399001.SZ']
+    sz399001['TRADE_DT'] = sz399001['TRADE_DT'].apply(lambda x: pd.Timestamp(x).strftime('%Y-%m-%d'))
+    sz399001.sort_values('TRADE_DT', ascending = True, inplace = True)
+    sz399001.reset_index(inplace = True, drop = True)
+
+    h11007 = loadBondIndex()
+    h11007['TRADE_DT'] = h11007['TRADE_DT'].apply(lambda x: pd.Timestamp(x).strftime('%Y-%m-%d'))
+    h11007.sort_values('TRADE_DT', ascending = True, inplace = True)
+    h11007.reset_index(inplace = True, drop = True)
+
     # data for calculate
     x = 
     
