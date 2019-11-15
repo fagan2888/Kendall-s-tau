@@ -180,9 +180,10 @@ def extend(delta, maxDelay, dCore):
 # main function
 def do(x, dmax, N, e, c, delta):
     
-    excel = pd.ExcelWriter('kendall-s-T.xlsx')
     dfCore = core(e, x, dmax)
     print(dfCore)
+    set_trace()
+    excel = pd.ExcelWriter('kendall-s-T.xlsx')
     dfCore.to_excel(excel, sheet_name = 'coreData')
     print('core map done')
     
@@ -206,6 +207,7 @@ def do(x, dmax, N, e, c, delta):
             TCenterList.append(T)
     
     print(dfCenter)
+    set_trace()
     dfCenter.to_excel(excel, sheet_name = 'centerData')
     print('center map done')
 
@@ -226,6 +228,7 @@ def do(x, dmax, N, e, c, delta):
         TExtendList.append(T)
     
     print(dfExtend)
+    set_trace()
     dfExtend.to_excel(excel, sheet_name = 'extendData')
     excel.save()
     print('extend map done')
@@ -234,39 +237,35 @@ def do(x, dmax, N, e, c, delta):
 
 if __name__ == '__main__':
 
-    # load basic data
-    df = loadStockIndex()
-    sh000001 = df[df['S_INFO_WINDCODE'] == '000001.SH']
-    sh000001['TRADE_DT'] = sh000001['TRADE_DT'].apply(lambda x: pd.Timestamp(x).strftime('%Y-%m-%d'))
-    sh000001.sort_values('TRADE_DT', ascending = True, inplace = True)
-    sh000001.reset_index(inplace = True, drop = True)
-
-    sz399001 = df[df['S_INFO_WINDCODE'] == '399001.SZ']
-    sz399001['TRADE_DT'] = sz399001['TRADE_DT'].apply(lambda x: pd.Timestamp(x).strftime('%Y-%m-%d'))
-    sz399001.sort_values('TRADE_DT', ascending = True, inplace = True)
-    sz399001.reset_index(inplace = True, drop = True)
-
-    h11007 = loadBondIndex()
-    h11007['TRADE_DT'] = h11007['TRADE_DT'].apply(lambda x: pd.Timestamp(x).strftime('%Y-%m-%d'))
-    h11007.sort_values('TRADE_DT', ascending = True, inplace = True)
-    h11007.reset_index(inplace = True, drop = True)
+    sh = pd.read_excel('daily.xlsx', sheet_name = '上证综指日频')
+    sz = pd.read_excel('daily.xlsx', sheet_name = '深证综指日频')
+    sh.sort_values(by = 'TRADE_DT', ascending = True, inplace = True)
+    sz.sort_values(by = 'TRADE_DT', ascending = True, inplace = True)
 
     # data for calculate
-    x = 
+#    x = sh.S_DQ_CHANGE
+#    x = sh.WEEK_ON_WEEK_RETURN
+#    x = sh.MONTH_ON_MONTH_RETURN
+    x = sh.YEAR_ON_YEAR_RETURN
+#    x = sz.S_DQ_CHANGE
+#    x = sz.WEEK_ON_WEEK_RETURN
+#    x = sz.MONTH_ON_MONTH_RETURN
+#    x = sz.YEAR_ON_YEAR_RETURN
+
     
     # number of the periods we care about
-    N =
+    N = 100
     
     # max delay period
-    dmax =
+    dmax = 100
 
     # error for selecting core map
-    e = 
+    e = 0.02
 
     # error for selecting center map
-    c = 
+    c = 0.05
 
     # error for selecting extend map
-    delta = 
+    delta = 1
 
     do(x, dmax, N, e, c, delta)
