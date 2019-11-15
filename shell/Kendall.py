@@ -53,40 +53,44 @@ def kendall (listOne, listTwo):
 # kendall's tau list based on time delay
 def kendallList(x,d):
     L = len(x)
-    m = np.mean(x)
-    var = np.var(x)
+    r = list()
+    for i in range(int(L-d)):
+        if x[i]<x[i+d]:
+            r.append(0)
+        else:
+            r.append(1)
+    m = np.mean(r)
+    var = np.var(r)
+    
     taus = list()
     sumUp = 0
-    for k in range(len(x)):
-        for i in range(int(len(x)-k-d)):
-            sumUp = sumUp + x[i+d]*x[i+k+d]
+    for k in range(1,int(L-d)):
+        for i in range(int(L-k-d)):
+            if x[i+d]>x[i] or x[i+k+d]>x[i+k]:
+                rkir = 0
+            else:
+                rkir = 1
+            sumUp = sumUp + rkir
         tau =  1/var*(1/(L-k-d)*sumUp-m*m)
-        tauNew = tau.copy()
-        taus.append(tauNew)
+        taus.append(tau)
     
-    ks = list(range(len(x)))
-    df = pd.DataFrame(columns = ['k', 'tau'])
-    df.k = ks
-    df.tau = taus
-
+    ks = list(range(1,int(L-d)))
+    df = pd.DataFrame({'k': ks, 'tau': taus})
+    df.set_index('k', inplace = True)
+    
     return df
 
 # N max index list
 def Nindexes(df, d, N):
-
-    df.set_index('k', inplace = True)
     df.sort_values(by = 'tau', ascending = False, inplace = True)
     indexes = list()
     indexes.append(df.index[0])
-    flag = df.index[0] - d
-    newDf = df[df.index <= flag]
-    newDf.sort_values(by = 'tau', inplace = True, ascending = False)
  
-    for i in range(N-1):
-        flag = newDf.index[0] - i*d
-        newDf = newDf[newDf.index <= flag]
-        newDf.sort_values(by = 'tau', inplace = True, ascending = False)
-        indexes.append(newdf.index[0])
+    for i in range(1,N-1):
+        flag = df.index[0] - i*d
+        newDf = df[df.index <= flag].copy()
+        newDf.sort_values(by = 'tau', ascending = False, inplace = True)
+        indexes.append(newDf.index[0])
 
     return indexes
 
@@ -94,14 +98,14 @@ def Nindexes(df, d, N):
 def core(e, x, maxDelay):
     dCore = list()
     periods = list()
-    for d in range(maxDelay):
+    for d in range(1,maxDelay):
         df = kendallList(x, d)
         N = len(df)//(2*d)
         indexes = Nindexes(df, d, N)
         indexes.sort()
         
         TSum = 0
-        for i in range(len(indexes):
+        for i in range(int(len(indexes)-1)):
             TSum = TSum + (indexes[i+1]-indexes[i])
         T1 = TSum / N
         
@@ -113,7 +117,7 @@ def core(e, x, maxDelay):
             indexes = Nindexes(df, d, N)
             indexes.sort()
             TSum = 0
-            for i in range(len(indexes):
+            for i in range(int(len(indexes)-1)):
                 TSum = TSum + (indexes[i+1]-indexes[i])
             T2 = TSum / N
             if np.abs(T2/(2*d-1)) < e:
@@ -134,17 +138,17 @@ def center(c, df, maxDelay, dc, N):
     indexes = Nindexes(df, dc, N)
     indexes.sort()
     TCoreList = list()
-    for i in range(len(indexes):
+    for i in range(int(len(indexes)-1)):
         T = indexes[i+1]-indexes[i]
         TCoreList.append(T)
  
     dCenter = list()
-    for d in range(maxDelay):
+    for d in range(1,maxDelay):
         indexes = Nindexes(df, d, N)
         indexes.sort()
         
         DiffList = list()
-        for i in range(len(indexes):
+        for i in range(int(len(indexes)-1)):
             T = indexes[i+1]-indexes[i]
             diff = T - TCoreList[i]
             DiffList.append(diff)
@@ -161,7 +165,7 @@ def center(c, df, maxDelay, dc, N):
 def extend(delta, maxDelay, dCore):
     
     dExtend = list()
-    for d in range(maxDelay):
+    for d in range(1,maxDelay):
         df = kendallList(x, d)
         tau = df['tau']
         distList = list()
@@ -199,7 +203,7 @@ def do(x, dmax, N, e, c, delta):
             indexes.sort()
         
             TSum = 0
-            for i in range(len(indexes):
+            for i in range(len(indexes)):
                 TSum = TSum + (indexes[i+1]-indexes[i])
             T = TSum / num
 
@@ -220,7 +224,7 @@ def do(x, dmax, N, e, c, delta):
         indexes.sort()
     
         TSum = 0
-        for i in range(len(indexes):
+        for i in range(len(indexes)):
             TSum = TSum + (indexes[i+1]-indexes[i])
         T = TSum / num
     
@@ -251,20 +255,17 @@ if __name__ == '__main__':
 #    x = sz.WEEK_ON_WEEK_RETURN
 #    x = sz.MONTH_ON_MONTH_RETURN
 #    x = sz.YEAR_ON_YEAR_RETURN
+    x = x[366:]
+    x = list(x)
 
-    
     # number of the periods we care about
     N = 100
-    
     # max delay period
     dmax = 100
-
     # error for selecting core map
     e = 0.02
-
     # error for selecting center map
     c = 0.05
-
     # error for selecting extend map
     delta = 1
 

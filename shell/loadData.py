@@ -4,8 +4,8 @@
 
 import numpy as np
 import pandas as pd
-from sqlhelper import batch
-from sqlhelper.tableToDataframe import toSQL, toDf
+from sqlhelper import database
+from sqlhelper.tableToDataFrame import toSQL, toDf
 from sqlalchemy import *
 from windTables import * 
 
