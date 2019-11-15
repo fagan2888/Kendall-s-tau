@@ -21,7 +21,7 @@ def kendall (listOne, listTwo):
     
     length = len(setOne)
 
-#   the first way: define a function
+    # the first way: define a function
     def comp(setOne):
         element = [0,0]
         result = list()
@@ -39,11 +39,12 @@ def kendall (listOne, listTwo):
     reversions = 2 * len(pairOne.difference(pairTwo))
     kendall = 1 - 2 * reversions / (length*(length-1))
 
-#   the second way: we can use combinations in itertools module to help but in this way you have to make sure that combinations does not change sequence of origin list
+    # the second way: we can use combinations in itertools module to help 
+    # but in this way you have to make sure that combinations does not change sequence of origin list
     reversions = 2 * len(set(combinations(setOne, 2)).difference(set(combinations(setTwo, 2))))
     kendall = 1 - 2 * reversions / (length*(length-1))
  
-#   the third way: use kendalltau in scipy.stats
+    # the third way: use kendalltau in scipy.stats
     kendall = kendalltau(setOne, setTwo)
     
     return kendall
@@ -89,17 +90,145 @@ def Nindexes(df, d, N):
     return indexes
 
 # core map
-def core():
+def core(e, x, maxDelay):
+    dCore = list()
+    periods = list()
+    for d in range(maxDelay):
+        df = kendallList(x, d)
+        N = len(df)//(2*d)
+        indexes = Nindexes(df, d, N)
+        indexes.sort()
+        
+        TSum = 0
+        for i in range(len(indexes):
+            TSum = TSum + (indexes[i+1]-indexes[i])
+        T1 = TSum / N
+        
+        if np.abs(T1/(2*d-1)) < e:
+            periods.append(T1)
+            dCore.append(d)
+        else:
+            N = len(df)//(2*d) + 1
+            indexes = Nindexes(df, d, N)
+            indexes.sort()
+            TSum = 0
+            for i in range(len(indexes):
+                TSum = TSum + (indexes[i+1]-indexes[i])
+            T2 = TSum / N
+            if np.abs(T2/(2*d-1)) < e:
+                periods.append(T2)
+                dCore.append(d)
+    
+    dfCore = pd.DataFrame(columns = ['d','T'])
+    dfCore.d = dCore
+    dfCore.T = periods
 
+    return dfCore
 
 # centre map
-def centre():
-
+# dc is one single element in dCore list
+# df here equals kendallList(x, dc)
+def center(c, df, maxDelay, dc, N):
+    
+    indexes = Nindexes(df, dc, N)
+    indexes.sort()
+    TCoreList = list()
+    for i in range(len(indexes):
+        T = indexes[i+1]-indexes[i]
+        TCoreList.append(T)
+ 
+    dCenter = list()
+    for d in range(maxDelay):
+        indexes = Nindexes(df, d, N)
+        indexes.sort()
+        
+        DiffList = list()
+        for i in range(len(indexes):
+            T = indexes[i+1]-indexes[i]
+            diff = T - TCoreList[i]
+            DiffList.append(diff)
+        
+        dist = np.linalg.norm(diffList)
+        if dist < c:
+            dCenter.append(d)
+    
+    return dCenter
 
 # extend map
-def extend():
+# dc is one single element in dCore list
+# df here equals kendallList(x, dc) 
+def extend(delta, maxDelay, dCore):
     
+    dExtend = list()
+    for d in range(maxDelay):
+        df = kendallList(x, d)
+        tau = df['tau']
+        distList = list()
+        for dc in dCore:
+            dfc = kendallList(x, dc)
+            tauc = df['tau']
+            dist = np.linalg.norm(np.array(tau)-np.array(tauc)) 
+            distList.append(dist)
+        
+        distMin = np.min(distList)
+        if distMin < delta:
+            dExtend.append(d)
+    
+    return dExtend
 
+# main function
+def do(x, dmax, N, e, c, delta):
+    
+    excel = pd.ExcelWriter('kendall-s-T.xlsx')
+    dfCore = core(e, x, dmax)
+    print(dfCore)
+    dfCore.to_excel(excel, sheet_name = 'coreData')
+    print('core map done')
+    
+    dfCenter = pd.DataFrame(columns = ['d','T'])
+    for dc in dCore:
+        dCenter = center(c, df, dmax, dc, N)
+        dCenterList = list()
+        TCenterList = list()
+        for dm in dCenter:
+            df = kendallList(x, dm)
+            num = len(df)//(2*dm)
+            indexes = Nindexes(df, dm, num)
+            indexes.sort()
+        
+            TSum = 0
+            for i in range(len(indexes):
+                TSum = TSum + (indexes[i+1]-indexes[i])
+            T = TSum / num
+
+            dCenterList.append(dm)
+            TCenterList.append(T)
+    
+    print(dfCenter)
+    dfCenter.to_excel(excel, sheet_name = 'centerData')
+    print('center map done')
+
+    dfExtend = pd.DataFrame(columns = ['d', 'T'])
+    dExtend = extend(delta, dmax, dCore)
+    for de in dExtend:
+        df = kendallList(x, de)
+        num = len(df)//(2*de)
+        indexes = Nindexes(df, de, num)
+        indexes.sort()
+    
+        TSum = 0
+        for i in range(len(indexes):
+            TSum = TSum + (indexes[i+1]-indexes[i])
+        T = TSum / num
+    
+        dExtendList.append(de)
+        TExtendList.append(T)
+    
+    print(dfExtend)
+    dfExtend.to_excel(excel, sheet_name = 'extendData')
+    excel.save()
+    print('extend map done')
+    print('task finished! data has been saved in kendall-s-T.xlsx')
 
 
 if __name__ == '__main__':
@@ -109,11 +238,16 @@ if __name__ == '__main__':
     # number of the periods we care about
     N =
     
-    # delay period
-    d = 
+    # max delay period
+    dmax =
 
-#    listOne = ['a','b','c','d']
-#    listTwo = ['d', 'a', 'c', 'b']
-#    kendall(listOne, listTwo)
+    # error for selecting core map
+    e = 
 
+    # error for selecting center map
+    c = 
 
+    # error for selecting extend map
+    delta = 
+
+    do(x, dmax, N, e, c, delta)
