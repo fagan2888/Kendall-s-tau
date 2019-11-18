@@ -186,8 +186,6 @@ def extend(delta, maxDelay, dCore):
 def do(x, dmax, N, e, c, delta):
     
     dfCore = core(e, x, dmax)
-    print(dfCore)
-    set_trace()
     excel = pd.ExcelWriter('kendall-s-T.xlsx')
     dfCore.to_excel(excel, sheet_name = 'coreData')
     print('core map done')
@@ -212,8 +210,6 @@ def do(x, dmax, N, e, c, delta):
             dCenterList.append(dm)
             TCenterList.append(T)
     
-    print(dfCenter)
-    set_trace()
     dfCenter.to_excel(excel, sheet_name = 'centerData')
     print('center map done')
 
@@ -236,8 +232,6 @@ def do(x, dmax, N, e, c, delta):
         dExtendList.append(de)
         TExtendList.append(T)
     
-    print(dfExtend)
-    set_trace()
     dfExtend.to_excel(excel, sheet_name = 'extendData')
     excel.save()
     print('extend map done')
