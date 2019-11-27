@@ -84,13 +84,15 @@ def kendallList(x,d):
 def Nindexes(df, d, N):
     df.sort_values(by = 'tau', ascending = False, inplace = True)
     indexes = list()
-    indexes.append(df.index[0])
+    if len(df)!= 0 :
+        indexes.append(df.index[0])
  
     for i in range(1,N-1):
         flag = df.index[0] - i*d
         newDf = df[df.index <= flag].copy()
-        newDf.sort_values(by = 'tau', ascending = False, inplace = True)
-        indexes.append(newDf.index[0])
+        if len(newDf) != 0:
+            newDf.sort_values(by = 'tau', ascending = False, inplace = True)
+            indexes.append(newDf.index[0])
 
     return indexes
 
@@ -109,8 +111,10 @@ def core(e, x, maxDelay):
             TSum = TSum + (indexes[i+1]-indexes[i])
         T1 = TSum / N
         
-        if np.abs(T1/(2*d-1)) < e:
+        if np.abs(T1/2*d-1) < e:
             periods.append(T1)
+            print(periods)
+            set_trace()
             dCore.append(d)
         else:
             N = len(df)//(2*d) + 1
@@ -120,8 +124,10 @@ def core(e, x, maxDelay):
             for i in range(int(len(indexes)-1)):
                 TSum = TSum + (indexes[i+1]-indexes[i])
             T2 = TSum / N
-            if np.abs(T2/(2*d-1)) < e:
+            if np.abs(T2/2*d-1) < e:
                 periods.append(T2)
+                print(periods)
+                set_trace()
                 dCore.append(d)
     
     dfCore = pd.DataFrame(columns = ['d','T'])
@@ -132,9 +138,9 @@ def core(e, x, maxDelay):
 
 # centre map
 # dc is one single element in dCore list
-# df here equals kendallList(x, dc)
-def center(c, df, maxDelay, dc, N):
+def center(c, x, maxDelay, dc, N):
     
+    df = kendallList(x, dc)
     indexes = Nindexes(df, dc, N)
     indexes.sort()
     TCoreList = list()
@@ -160,9 +166,7 @@ def center(c, df, maxDelay, dc, N):
     return dCenter
 
 # extend map
-# dc is one single element in dCore list
-# df here equals kendallList(x, dc) 
-def extend(delta, maxDelay, dCore):
+def extend(delta, x, maxDelay, dCore):
     
     dExtend = list()
     for d in range(1,maxDelay):
@@ -185,15 +189,26 @@ def extend(delta, maxDelay, dCore):
 # main function
 def do(x, dmax, N, e, c, delta):
     
-    dfCore = core(e, x, dmax)
-    excel = pd.ExcelWriter('kendall-s-T.xlsx')
-    dfCore.to_excel(excel, sheet_name = 'coreData')
-    print('core map done')
-    
+    dfCore = pd.DataFrame(columns = ['d', 'T'])
+    while len(dfCore) == 0 and e <= 0.5:
+        dfCore = core(e, x, dmax)
+        print(e)
+        e = e + 0.01
+    if e > 0.5:
+        print('task failed! it seems like origin data has no feasible period!')
+        return -1
+    e = e - 0.01
+    dfCore.to_excel('coreData.xlsx')
+    print('core map done and error for core map is', e)
+
+    dfCore = pd.read_excel('coreData.xlsx', index_col = 0)
+    print(dfCore)
+    set_trace()
+
     dfCenter = pd.DataFrame(columns = ['d','T'])
     dCore = dfCore.d
     for dc in dCore:
-        dCenter = center(c, df, dmax, dc, N)
+        dCenter = center(c, x, dmax, dc, N)
         dCenterList = list()
         TCenterList = list()
         for dm in dCenter:
@@ -210,11 +225,11 @@ def do(x, dmax, N, e, c, delta):
             dCenterList.append(dm)
             TCenterList.append(T)
     
-    dfCenter.to_excel(excel, sheet_name = 'centerData')
+    dfCenter.to_excel('centerData.xlsx')
     print('center map done')
 
     dfExtend = pd.DataFrame(columns = ['d', 'T'])
-    dExtend = extend(delta, dmax, dCore)
+    dExtend = extend(delta, x, dmax, dCore)
     if dExtend == -1:
         print('no regular periods! please lower the criteria!')
         return -1
@@ -232,30 +247,33 @@ def do(x, dmax, N, e, c, delta):
         dExtendList.append(de)
         TExtendList.append(T)
     
-    dfExtend.to_excel(excel, sheet_name = 'extendData')
-    excel.save()
+    dfExtend.to_excel('extendData.xlsx')
     print('extend map done')
     print('task finished! data has been saved in kendall-s-T.xlsx')
 
 
 if __name__ == '__main__':
 
-    sh = pd.read_excel('daily.xlsx', sheet_name = '上证综指日频')
-    sz = pd.read_excel('daily.xlsx', sheet_name = '深证综指日频')
-    sh.sort_values(by = 'TRADE_DT', ascending = True, inplace = True)
-    sz.sort_values(by = 'TRADE_DT', ascending = True, inplace = True)
+#    sh = pd.read_excel('daily.xlsx', sheet_name = '上证综指日频')
+#    sz = pd.read_excel('daily.xlsx', sheet_name = '深证综指日频')
+#    sh.sort_values(by = 'TRADE_DT', ascending = True, inplace = True)
+#    sz.sort_values(by = 'TRADE_DT', ascending = True, inplace = True)
 
     # data for calculate
 #    x = sh.S_DQ_CHANGE
 #    x = sh.WEEK_ON_WEEK_RETURN
 #    x = sh.MONTH_ON_MONTH_RETURN
-    x = sh.YEAR_ON_YEAR_RETURN
+#    x = sh.YEAR_ON_YEAR_RETURN
 #    x = sz.S_DQ_CHANGE
 #    x = sz.WEEK_ON_WEEK_RETURN
 #    x = sz.MONTH_ON_MONTH_RETURN
 #    x = sz.YEAR_ON_YEAR_RETURN
-    x = x[366:]
-    x = list(x)
+#    x = x[366:]
+#    x = list(x)
+
+    x = list(pd.read_excel('fullData.xlsx', sheet_name = '股票').sort_values(by = '日期', ascending = True)['标普500'])
+    print(x)
+    set_trace()
 
     # number of the periods we care about
     N = 100
