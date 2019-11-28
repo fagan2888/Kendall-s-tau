@@ -231,6 +231,8 @@ def do(x, dmax, N, e, c, delta):
             dCenterList.append(dm)
             TCenterList.append(T)
     
+    dfCenter.d = dCenterList
+    dfCenter.T = TCenterList
     dfCenter.to_excel('centerData.xlsx')
     print('center map done')
 
@@ -250,6 +252,8 @@ def do(x, dmax, N, e, c, delta):
         dExtendList.append(de)
         TExtendList.append(T)
     
+    dfExtend.d = dExtendList
+    dfExtend.T = TExtendList
     dfExtend.to_excel('extendData.xlsx')
     print('extend map done')
     print('task finished! data has been saved in kendall-s-T.xlsx')
@@ -287,5 +291,6 @@ if __name__ == '__main__':
     c = 0.05
     # error for selecting extend map
     delta = 1
-
+    
+    core(e, x, maxDelay)
     do(x, dmax, N, e, c, delta)
