@@ -86,13 +86,15 @@ def Nindexes(df, d, N):
     indexes = list()
     if len(df)!= 0 :
         indexes.append(df.index[0])
+    else:
+        return []
  
-    for i in range(1,N-1):
-        flag = df.index[0] - i*d
-        newDf = df[df.index <= flag].copy()
-        if len(newDf) != 0:
-            newDf.sort_values(by = 'tau', ascending = False, inplace = True)
-            indexes.append(newDf.index[0])
+    for i in range(1,len(df)):
+        if len(indexes) <= N:
+            c = df.index[i]
+            distance = min([j-c for j in indexes])
+            if distance >= d:
+                indexes.append(c)
 
     return indexes
 
@@ -103,7 +105,11 @@ def core(e, x, maxDelay):
     for d in range(1,maxDelay):
         df = kendallList(x, d)
         N = len(df)//(2*d)
+        if N == 0:
+            continue
         indexes = Nindexes(df, d, N)
+        if len(indexes) == 0:
+            continue
         indexes.sort()
         
         TSum = 0
@@ -113,12 +119,12 @@ def core(e, x, maxDelay):
         
         if np.abs(T1/2*d-1) < e:
             periods.append(T1)
-            print(periods)
-            set_trace()
             dCore.append(d)
         else:
             N = len(df)//(2*d) + 1
             indexes = Nindexes(df, d, N)
+            if len(indexes) == 0:
+                continue
             indexes.sort()
             TSum = 0
             for i in range(int(len(indexes)-1)):
@@ -126,8 +132,6 @@ def core(e, x, maxDelay):
             T2 = TSum / N
             if np.abs(T2/2*d-1) < e:
                 periods.append(T2)
-                print(periods)
-                set_trace()
                 dCore.append(d)
     
     dfCore = pd.DataFrame(columns = ['d','T'])
@@ -151,6 +155,8 @@ def center(c, x, maxDelay, dc, N):
     dCenter = list()
     for d in range(1,maxDelay):
         indexes = Nindexes(df, d, N)
+        if len(indexes) == 0:
+            continue
         indexes.sort()
         
         DiffList = list()
@@ -171,6 +177,8 @@ def extend(delta, x, maxDelay, dCore):
     dExtend = list()
     for d in range(1,maxDelay):
         df = kendallList(x, d)
+        if len(df) == 0:
+            continue
         tau = df['tau']
         distList = list()
         for dc in dCore:
@@ -178,8 +186,6 @@ def extend(delta, x, maxDelay, dCore):
             tauc = df['tau']
             dist = np.linalg.norm(np.array(tau)-np.array(tauc)) 
             distList.append(dist)
-        if len(distList) == 0:
-            return -1
         distMin = np.min(distList)
         if distMin < delta:
             dExtend.append(d)
@@ -230,9 +236,6 @@ def do(x, dmax, N, e, c, delta):
 
     dfExtend = pd.DataFrame(columns = ['d', 'T'])
     dExtend = extend(delta, x, dmax, dCore)
-    if dExtend == -1:
-        print('no regular periods! please lower the criteria!')
-        return -1
     for de in dExtend:
         df = kendallList(x, de)
         num = len(df)//(2*de)
@@ -271,14 +274,13 @@ if __name__ == '__main__':
 #    x = x[366:]
 #    x = list(x)
 
-    x = list(pd.read_excel('fullData.xlsx', sheet_name = '股票').sort_values(by = '日期', ascending = True)['标普500'])
-    print(x)
-    set_trace()
+#    x = list(pd.read_excel('fullData.xlsx', sheet_name = 'CPI').sort_values(by = '日期', ascending = True)['中国CPI'])
 
+    x = [1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1]
     # number of the periods we care about
-    N = 100
+    N = 10
     # max delay period
-    dmax = 2200
+    dmax = len(x)//2
     # error for selecting core map
     e = 0.02
     # error for selecting center map
