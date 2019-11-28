@@ -53,29 +53,45 @@ def kendall (listOne, listTwo):
 # kendall's tau list based on time delay
 def kendallList(x,d):
     L = len(x)
-    r = list()
-    for i in range(int(L-d)):
-        if x[i]<x[i+d]:
-            r.append(0)
-        else:
-            r.append(1)
-    m = np.mean(r)
-    var = np.var(r)
-    
+#    r = list()
+#    for i in range(int(L-d)):
+#        if x[i]<x[i+d]:
+#            r.append(0)
+#        else:
+#            r.append(1)
+#    m = np.mean(r)
+#    var = np.var(r)
+#    if var == 0:
+#        print('period == %d'%(d))
+#        exit()
     taus = list()
-    sumUp = 0
+#    sumUp = 0
     for k in range(1,int(L-d)):
+        r1 = list()
+        r2 = list()
         for i in range(int(L-k-d)):
-            if x[i+d]>x[i] or x[i+k+d]>x[i+k]:
-                rkir = 0
+#            if x[i+d]>x[i] or x[i+k+d]>x[i+k]:
+#                rkir = 0
+#            else:
+#                rkir = 1
+#            sumUp = sumUp + rkir
+#        tau =  1/var*(1/(L-k-d)*sumUp-m*m)
+#        tau = 1/(L-k-d)*sumUp
+            
+            if x[i+d]>x[i]:
+                r1.append(0)
             else:
-                rkir = 1
-            sumUp = sumUp + rkir
-        tau =  1/var*(1/(L-k-d)*sumUp-m*m)
+                r1.append(1)
+            if x[i+k+d]>x[i+k]:
+                r2.append(0)
+            else:
+                r2.append(1)  
+        tau = pd.Series(r1).corr(pd.Series(r2))
         taus.append(tau)
     
     ks = list(range(1,int(L-d)))
     df = pd.DataFrame({'k': ks, 'tau': taus})
+    df = df.fillna(0)
     df.set_index('k', inplace = True)
     
     return df
@@ -111,13 +127,13 @@ def core(e, x, maxDelay):
         if len(indexes) == 0:
             continue
         indexes.sort()
-        
+
         TSum = 0
         for i in range(int(len(indexes)-1)):
             TSum = TSum + (indexes[i+1]-indexes[i])
         T1 = TSum / N
         
-        if np.abs(T1/2*d-1) < e:
+        if np.abs(T1/(2*d)-1) < e:
             periods.append(T1)
             dCore.append(d)
         else:
@@ -130,10 +146,10 @@ def core(e, x, maxDelay):
             for i in range(int(len(indexes)-1)):
                 TSum = TSum + (indexes[i+1]-indexes[i])
             T2 = TSum / N
-            if np.abs(T2/2*d-1) < e:
+            if np.abs(T2/(2*d)-1) < e:
                 periods.append(T2)
                 dCore.append(d)
-    
+
     dfCore = pd.DataFrame(columns = ['d','T'])
     dfCore.d = dCore
     dfCore.T = periods
@@ -159,11 +175,11 @@ def center(c, x, maxDelay, dc, N):
             continue
         indexes.sort()
         
-        DiffList = list()
+        diffList = list()
         for i in range(int(len(indexes)-1)):
             T = indexes[i+1]-indexes[i]
             diff = T - TCoreList[i]
-            DiffList.append(diff)
+            diffList.append(diff)
         
         dist = np.linalg.norm(diffList)
         if dist < c:
@@ -183,7 +199,7 @@ def extend(delta, x, maxDelay, dCore):
         distList = list()
         for dc in dCore:
             dfc = kendallList(x, dc)
-            tauc = df['tau']
+            tauc = dfc['tau']
             dist = np.linalg.norm(np.array(tau)-np.array(tauc)) 
             distList.append(dist)
         distMin = np.min(distList)
@@ -238,6 +254,8 @@ def do(x, dmax, N, e, c, delta):
 
     dfExtend = pd.DataFrame(columns = ['d', 'T'])
     dExtend = extend(delta, x, dmax, dCore)
+    dExtendList = list()
+    TExtendList = list()
     for de in dExtend:
         df = kendallList(x, de)
         num = len(df)//(2*de)
@@ -280,7 +298,7 @@ if __name__ == '__main__':
 
 #    x = list(pd.read_excel('fullData.xlsx', sheet_name = 'CPI').sort_values(by = '日期', ascending = True)['中国CPI'])
 
-    x = [1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1,2,3,4,3,2,1]
+    x = [1,2,3,4,3,2,1,2.1,3,4,3.1,2,1.1,2,3.1,4,3,2.1,1,2,3.1,4,3,2,1,2,3.1,4.1,3,2,1.1,2,3,4.1,3,2.1,1,2]
     # number of the periods we care about
     N = 10
     # max delay period
@@ -292,5 +310,5 @@ if __name__ == '__main__':
     # error for selecting extend map
     delta = 1
     
-    core(e, x, maxDelay)
+    core(e, x, 2)
     do(x, dmax, N, e, c, delta)
