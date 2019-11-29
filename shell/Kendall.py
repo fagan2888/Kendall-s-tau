@@ -86,7 +86,7 @@ def kendallList(x,d):
                 r2.append(0)
             else:
                 r2.append(1)  
-        tau = pd.Series(r1).corr(pd.Series(r2))
+        tau = pd.Series(r1).corr(pd.Series(r2), method = 'kendall')
         taus.append(tau)
     
     ks = list(range(1,int(L-d)))
@@ -124,7 +124,7 @@ def core(e, x, maxDelay):
         if N == 0:
             continue
         indexes = Nindexes(df, d, N)
-        if len(indexes) == 0:
+        if len(indexes) < 2:
             continue
         indexes.sort()
 
@@ -132,14 +132,13 @@ def core(e, x, maxDelay):
         for i in range(int(len(indexes)-1)):
             TSum = TSum + (indexes[i+1]-indexes[i])
         T1 = TSum / N
-        
         if np.abs(T1/(2*d)-1) < e:
             periods.append(T1)
             dCore.append(d)
         else:
             N = len(df)//(2*d) + 1
             indexes = Nindexes(df, d, N)
-            if len(indexes) == 0:
+            if len(indexes) < 2:
                 continue
             indexes.sort()
             TSum = 0
@@ -200,6 +199,9 @@ def extend(delta, x, maxDelay, dCore):
         for dc in dCore:
             dfc = kendallList(x, dc)
             tauc = dfc['tau']
+            length = min([len(tau),len(tauc)])
+            tauc = tauc[0:length]
+            tau = tau[0:length]
             dist = np.linalg.norm(np.array(tau)-np.array(tauc)) 
             distList.append(dist)
         distMin = np.min(distList)
@@ -214,21 +216,19 @@ def do(x, dmax, N, e, c, delta):
     dfCore = pd.DataFrame(columns = ['d', 'T'])
     while len(dfCore) == 0 and e <= 0.5:
         dfCore = core(e, x, dmax)
-        print(e)
         e = e + 0.01
     if e > 0.5:
         print('task failed! it seems like origin data has no feasible period!')
         return -1
     e = e - 0.01
-    dfCore.to_excel('coreData.xlsx')
+#    dfCore.to_excel('coreData.xlsx')
     print('core map done and error for core map is', e)
 
-    dfCore = pd.read_excel('coreData.xlsx', index_col = 0)
     print(dfCore)
     set_trace()
 
     dfCenter = pd.DataFrame(columns = ['d','T'])
-    dCore = dfCore.d
+    dCore = list(dfCore.d)
     for dc in dCore:
         dCenter = center(c, x, dmax, dc, N)
         dCenterList = list()
@@ -236,11 +236,15 @@ def do(x, dmax, N, e, c, delta):
         for dm in dCenter:
             df = kendallList(x, dm)
             num = len(df)//(2*dm)
+            if num == 0:
+                continue
             indexes = Nindexes(df, dm, num)
+            if len(indexes) < 2:
+                continue
             indexes.sort()
         
             TSum = 0
-            for i in range(len(indexes)):
+            for i in range(int(len(indexes)-1)):
                 TSum = TSum + (indexes[i+1]-indexes[i])
             T = TSum / num
 
@@ -249,8 +253,11 @@ def do(x, dmax, N, e, c, delta):
     
     dfCenter.d = dCenterList
     dfCenter.T = TCenterList
-    dfCenter.to_excel('centerData.xlsx')
+#    dfCenter.to_excel('centerData.xlsx')
     print('center map done')
+
+    print(dfCenter)
+    set_trace()
 
     dfExtend = pd.DataFrame(columns = ['d', 'T'])
     dExtend = extend(delta, x, dmax, dCore)
@@ -259,11 +266,15 @@ def do(x, dmax, N, e, c, delta):
     for de in dExtend:
         df = kendallList(x, de)
         num = len(df)//(2*de)
+        if num == 0:
+            continue
         indexes = Nindexes(df, de, num)
+        if len(indexes) < 2:
+            continue
         indexes.sort()
     
         TSum = 0
-        for i in range(len(indexes)):
+        for i in range(int(len(indexes)-1)):
             TSum = TSum + (indexes[i+1]-indexes[i])
         T = TSum / num
     
@@ -272,9 +283,11 @@ def do(x, dmax, N, e, c, delta):
     
     dfExtend.d = dExtendList
     dfExtend.T = TExtendList
-    dfExtend.to_excel('extendData.xlsx')
+#    dfExtend.to_excel('extendData.xlsx')
     print('extend map done')
     print('task finished! data has been saved in kendall-s-T.xlsx')
+
+    print(dfExtend)
 
 
 if __name__ == '__main__':
@@ -296,9 +309,9 @@ if __name__ == '__main__':
 #    x = x[366:]
 #    x = list(x)
 
-#    x = list(pd.read_excel('fullData.xlsx', sheet_name = 'CPI').sort_values(by = '日期', ascending = True)['中国CPI'])
+    x = list(pd.read_excel('fullData.xlsx', sheet_name = '股票').sort_values(by = '日期', ascending = True)['恒生指数'])
 
-    x = [1,2,3,4,3,2,1,2.1,3,4,3.1,2,1.1,2,3.1,4,3,2.1,1,2,3.1,4,3,2,1,2,3.1,4.1,3,2,1.1,2,3,4.1,3,2.1,1,2]
+#    x = [1,2,3,4,3,2,1,2.1,3,4,3.1,2,1.1,2,3.1,4,3,2.1,1,2,3.1,4,3,2,1,2,3.1,4.1,3,2,1.1,2,3,4.1,3,2.1,1,2]
     # number of the periods we care about
     N = 10
     # max delay period
@@ -310,5 +323,4 @@ if __name__ == '__main__':
     # error for selecting extend map
     delta = 1
     
-    core(e, x, 2)
     do(x, dmax, N, e, c, delta)
