@@ -170,12 +170,12 @@ def center(c, x, maxDelay, dc, N):
     dCenter = list()
     for d in range(1,maxDelay):
         indexes = Nindexes(df, d, N)
-        if len(indexes) == 0:
+        if len(indexes) < 2:
             continue
         indexes.sort()
         
         diffList = list()
-        for i in range(int(len(indexes)-1)):
+        for i in range(min([int(len(indexes)-1),len(TCoreList)])):
             T = indexes[i+1]-indexes[i]
             diff = T - TCoreList[i]
             diffList.append(diff)
@@ -227,37 +227,38 @@ def do(x, dmax, N, e, c, delta):
     print(dfCore)
     set_trace()
 
-    dfCenter = pd.DataFrame(columns = ['d','T'])
     dCore = list(dfCore.d)
-    for dc in dCore:
-        dCenter = center(c, x, dmax, dc, N)
-        dCenterList = list()
-        TCenterList = list()
-        for dm in dCenter:
-            df = kendallList(x, dm)
-            num = len(df)//(2*dm)
-            if num == 0:
-                continue
-            indexes = Nindexes(df, dm, num)
-            if len(indexes) < 2:
-                continue
-            indexes.sort()
-        
-            TSum = 0
-            for i in range(int(len(indexes)-1)):
-                TSum = TSum + (indexes[i+1]-indexes[i])
-            T = TSum / num
-
-            dCenterList.append(dm)
-            TCenterList.append(T)
     
-    dfCenter.d = dCenterList
-    dfCenter.T = TCenterList
-#    dfCenter.to_excel('centerData.xlsx')
-    print('center map done')
-
-    print(dfCenter)
-    set_trace()
+#    dfCenter = pd.DataFrame(columns = ['d','T'])
+#    for dc in dCore:
+#        dCenter = center(c, x, dmax, dc, N)
+#        dCenterList = list()
+#        TCenterList = list()
+#        for dm in dCenter:
+#            df = kendallList(x, dm)
+#            num = len(df)//(2*dm)
+#            if num == 0:
+#                continue
+#            indexes = Nindexes(df, dm, num)
+#            if len(indexes) < 2:
+#                continue
+#            indexes.sort()
+#        
+#            TSum = 0
+#            for i in range(int(len(indexes)-1)):
+#                TSum = TSum + (indexes[i+1]-indexes[i])
+#            T = TSum / num
+#
+#            dCenterList.append(dm)
+#            TCenterList.append(T)
+#    
+#    dfCenter.d = dCenterList
+#    dfCenter.T = TCenterList
+##    dfCenter.to_excel('centerData.xlsx')
+#    print('center map done')
+#
+#    print(dfCenter)
+#    set_trace()
 
     dfExtend = pd.DataFrame(columns = ['d', 'T'])
     dExtend = extend(delta, x, dmax, dCore)
@@ -309,7 +310,7 @@ if __name__ == '__main__':
 #    x = x[366:]
 #    x = list(x)
 
-    x = list(pd.read_excel('fullData.xlsx', sheet_name = '股票').sort_values(by = '日期', ascending = True)['恒生指数'])
+    x = list(pd.read_excel('fullData.xlsx', sheet_name = '大宗').sort_values(by = '日期', ascending = True)['CRB纺织现货'])
 
 #    x = [1,2,3,4,3,2,1,2.1,3,4,3.1,2,1.1,2,3.1,4,3,2.1,1,2,3.1,4,3,2,1,2,3.1,4.1,3,2,1.1,2,3,4.1,3,2.1,1,2]
     # number of the periods we care about
@@ -323,4 +324,5 @@ if __name__ == '__main__':
     # error for selecting extend map
     delta = 1
     
+    #print(core(e,x,dmax))
     do(x, dmax, N, e, c, delta)
