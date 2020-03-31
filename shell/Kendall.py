@@ -310,7 +310,9 @@ if __name__ == '__main__':
 #    x = x[366:]
 #    x = list(x)
 
-    x = list(pd.read_excel('fullData.xlsx', sheet_name = '大宗').sort_values(by = '日期', ascending = True)['CRB纺织现货'])
+#    x = list(pd.read_excel('fullData.xlsx', sheet_name = '大宗').sort_values(by = '日期', ascending = True)['CRB纺织现货'])
+
+    x = list(pd.read_excel('windData.xlsx').fillna(0)['PCT_CHG'])
 
 #    x = [1,2,3,4,3,2,1,2.1,3,4,3.1,2,1.1,2,3.1,4,3,2.1,1,2,3.1,4,3,2,1,2,3.1,4.1,3,2,1.1,2,3,4.1,3,2.1,1,2]
     # number of the periods we care about
